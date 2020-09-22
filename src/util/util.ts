@@ -1,9 +1,5 @@
 export const CLIPBOARD_ITEM_SUPPORTED = navigator.clipboard && window.ClipboardItem;
 
-if (!CLIPBOARD_ITEM_SUPPORTED) {
-  alert('Нужен другой браузер!');
-}
-
 const IMG_WIDTH = 569;
 const IMG_HEIGHT = 820;
 const IMG_MARGIN = 20;

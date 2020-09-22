@@ -19,11 +19,15 @@ import { Alert } from '@material-ui/lab';
 import CloseIcon from '@material-ui/icons/Close';
 import useFlag from '../hooks/useFlag';
 import DECK from '../deck';
-import { drawTiles, copyBlobToClipboard } from '../util/util';
+import { drawTiles, copyBlobToClipboard, CLIPBOARD_ITEM_SUPPORTED } from '../util/util';
 import usePrevious from '../hooks/usePrevious';
 
-const REQUIRES_INTERACTION_TO_COPY = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent);
-const IS_SAFARI_DESKTOP = (window as any).safari && !navigator.userAgent.match(/(iPod|iPhone|iPad)/);
+const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const IS_IOS = navigator.userAgent.match(/(iPod|iPhone|iPad)/);
+const IS_SAFARI_DESKTOP = IS_SAFARI && !IS_IOS;
+const IS_ANDROID = /android/i.test(navigator.userAgent);
+const REQUIRES_INTERACTION_TO_COPY = !CLIPBOARD_ITEM_SUPPORTED || IS_SAFARI || IS_ANDROID;
+
 const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
 const SNACKBAR_POSITION = { vertical: 'top', horizontal: 'center' } as const;
@@ -54,8 +58,9 @@ const Home: FC = () => {
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [successNotification, setSuccessNotification] = useState<string>();
   const [errorNotification, setErrorNotification] = useState<string>();
-  // Only used for browsers that require user interaction to copy
+  // Used by Safari Desktop which allows copying with another button
   const [blobToCopy, setBlobToCopy] = useState<Blob>();
+  // Only used for Android and Safari Mobile to manually copy image
   const [blobUrlToCopy, setBlobUrlToCopy] = useState<string>();
 
   useEffect(() => {
