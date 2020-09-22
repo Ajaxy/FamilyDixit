@@ -20,7 +20,7 @@ import CloseIcon from '@material-ui/icons/Close';
 import useFlag from '../hooks/useFlag';
 import DECK from '../deck';
 import { drawTiles, copyBlobToClipboard, CLIPBOARD_ITEM_SUPPORTED } from '../util/util';
-import usePrevious from '../hooks/usePrevious';
+import useCurrentOrPrevious from '../hooks/useCurrentOrPrevious';
 
 const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const IS_IOS = navigator.userAgent.match(/(iPod|iPhone|iPad)/);
@@ -123,7 +123,7 @@ const Home: FC = () => {
   }, [downloadAndCopy, outs]);
 
   const handleSelectedInput = useCallback(() => {
-    const selectedNumbers = (selectedInput || '').split(/[^\d]/).map(Number);
+    const selectedNumbers = (selectedInput || '').split(/[^\d]/).map(Number).filter(Boolean);
     if (!selectedNumbers.length) {
       setErrorNotification('Перечисли выбранные номера!');
       return;
@@ -173,10 +173,11 @@ const Home: FC = () => {
     });
   }, [blobToCopy, handleCloseCopyModal]);
 
-  const notification = successNotification || errorNotification;
-  const prevNotification = usePrevious(notification, true);
-  const notificationStyle = successNotification ? 'success' : errorNotification ? 'error' : undefined;
-  const prevNotificationStyle = usePrevious(notificationStyle, true);
+  const notification = useCurrentOrPrevious(successNotification || errorNotification, true);
+  const notificationStyle = useCurrentOrPrevious(
+    successNotification ? 'success' : errorNotification ? 'error' : undefined,
+    true,
+  );
 
   return (
     <>
@@ -248,13 +249,13 @@ const Home: FC = () => {
           )}
         </Grid>
         <Snackbar
-          open={Boolean(notification)}
+          open={Boolean(successNotification || errorNotification)}
           anchorOrigin={SNACKBAR_POSITION}
           autoHideDuration={3000}
           onClose={handleCloseSnackbar}
         >
-          <Alert onClose={handleCloseSnackbar} severity={prevNotificationStyle}>
-            {prevNotification}
+          <Alert onClose={handleCloseSnackbar} severity={notificationStyle}>
+            {notification}
           </Alert>
         </Snackbar>
       </Container>
