@@ -22,7 +22,7 @@ import DECK from '../deck';
 import { drawTiles, copyBlobToClipboard } from '../util/util';
 import usePrevious from '../hooks/usePrevious';
 
-const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const REQUIRES_INTERACTION_TO_COPY = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent);
 const IS_SAFARI_MOBILE = navigator.userAgent.match(/(iPod|iPhone|iPad)/);
 const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
@@ -40,7 +40,7 @@ const Home: FC = () => {
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [successNotification, setSuccessNotification] = useState<string>();
   const [errorNotification, setErrorNotification] = useState<string>();
-  // Only used for Safari as it requires user interaction to copy
+  // Only used for browsers that require user interaction to copy
   const [blobToCopy, setBlobToCopy] = useState<Blob>();
   const [blobUrlToCopy, setBlobUrlToCopy] = useState<string>();
 
@@ -48,7 +48,7 @@ const Home: FC = () => {
     const urls = numbers.map(getUrlByNumber);
     const pngBlob = await drawTiles(urls);
 
-    if (IS_SAFARI) {
+    if (REQUIRES_INTERACTION_TO_COPY) {
       setBlobToCopy(pngBlob);
       setBlobUrlToCopy(URL.createObjectURL(pngBlob));
     } else {
@@ -223,7 +223,7 @@ const Home: FC = () => {
           </Alert>
         </Snackbar>
       </Container>
-      {IS_SAFARI && (
+      {REQUIRES_INTERACTION_TO_COPY && (
         <Dialog open={Boolean(blobToCopy)} onClose={handleCloseSafariModal} aria-labelledby="form-dialog-title">
           {IS_SAFARI_MOBILE ? (
             <>
