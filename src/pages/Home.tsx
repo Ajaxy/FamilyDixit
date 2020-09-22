@@ -13,14 +13,17 @@ import {
   DialogActions,
   TextField,
   Snackbar,
+  IconButton,
 } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
+import CloseIcon from '@material-ui/icons/Close';
 import useFlag from '../hooks/useFlag';
 import DECK from '../deck';
 import { drawTiles, copyBlobToClipboard } from '../util/util';
 import usePrevious from '../hooks/usePrevious';
 
 const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+const IS_SAFARI_MOBILE = navigator.userAgent.match(/(iPod|iPhone|iPad)/);
 const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
 const SNACKBAR_POSITION = { vertical: 'top', horizontal: 'center' } as const;
@@ -222,14 +225,29 @@ const Home: FC = () => {
       </Container>
       {IS_SAFARI && (
         <Dialog open={Boolean(blobToCopy)} onClose={handleCloseSafariModal} aria-labelledby="form-dialog-title">
-          <DialogContent>
+          {IS_SAFARI_MOBILE ? (
+            <>
+              <DialogTitle>
+                <Grid container alignItems="center" justify="space-between">
+                  <Grid item>
+                    Скопируй!
+                  </Grid>
+                  <Grid item>
+                    <IconButton aria-label="close" onClick={handleCloseSafariModal}>
+                      <CloseIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              </DialogTitle>
+              <DialogContent>
+                <img src={blobUrlToCopy} width="100%" alt="" />
+              </DialogContent>
+            </>
+          ) : (
             <Button variant="contained" color="primary" onClick={handleSafariCopy}>
               Скопировать
             </Button>
-            <Box mt={1}>
-              <img src={blobUrlToCopy} width="100%" alt="" />
-            </Box>
-          </DialogContent>
+          )}
         </Dialog>
       )}
     </>
