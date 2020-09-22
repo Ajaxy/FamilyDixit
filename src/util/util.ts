@@ -9,7 +9,7 @@ const IMG_HEIGHT = 820;
 const IMG_MARGIN = 20;
 const COLUMNS_COUNT = 3;
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve(img);

@@ -20,6 +20,7 @@ import DECK from '../deck';
 import { drawTiles, copyBlobToClipboard } from '../util/util';
 import usePrevious from '../hooks/usePrevious';
 
+const IS_SAFARI = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
 const SNACKBAR_POSITION = { vertical: 'top', horizontal: 'center' } as const;
@@ -29,12 +30,6 @@ function getUrlByNumber(number: number) {
   return DECK[number - 1];
 }
 
-async function downloadAndCopy(numbers: number[]) {
-  const urls = numbers.map(getUrlByNumber);
-  const pngBlob = await drawTiles(urls);
-  await copyBlobToClipboard(pngBlob);
-}
-
 const Home: FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [outs, setOuts] = useState<number[]>([]);
@@ -42,6 +37,23 @@ const Home: FC = () => {
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [successNotification, setSuccessNotification] = useState<string>();
   const [errorNotification, setErrorNotification] = useState<string>();
+  // Only used for Safari as it requires user interaction to copy
+  const [blobToCopy, setBlobToCopy] = useState<Blob>();
+  const [blobUrlToCopy, setBlobUrlToCopy] = useState<string>();
+
+  const downloadAndCopy = useCallback(async (numbers: number[]) => {
+    const urls = numbers.map(getUrlByNumber);
+    const pngBlob = await drawTiles(urls);
+
+    if (IS_SAFARI) {
+      setBlobToCopy(pngBlob);
+      setBlobUrlToCopy(URL.createObjectURL(pngBlob));
+    } else {
+      await copyBlobToClipboard(pngBlob);
+      setSuccessNotification(NOTIFICATION_COPIED);
+      setIsLoading(false);
+    }
+  }, []);
 
   const handleSelectedInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedInput(e.target.value);
@@ -59,13 +71,12 @@ const Home: FC = () => {
 
     setIsLoading(true);
     downloadAndCopy(numbersToTake).then(() => {
-      setSuccessNotification(NOTIFICATION_COPIED);
       setOuts([...outs, ...numbersToTake]);
-      setIsLoading(false);
     }, () => {
+      setErrorNotification('Ошибка');
       setIsLoading(false);
     });
-  }, [outs]);
+  }, [downloadAndCopy, outs]);
 
   const handleAddonClick = useCallback(() => {
     const remainingNumbers = _.without(DECK_NUMBERS, ...outs);
@@ -78,13 +89,12 @@ const Home: FC = () => {
 
     setIsLoading(true);
     downloadAndCopy([numberToTake]).then(() => {
-      setSuccessNotification(NOTIFICATION_COPIED);
-      setIsLoading(false);
       setOuts([...outs, numberToTake]);
     }, () => {
+      setErrorNotification('Ошибка');
       setIsLoading(false);
     });
-  }, [outs]);
+  }, [downloadAndCopy, outs]);
 
   const handleSelectedInput = useCallback(() => {
     const selectedNumbers = (selectedInput || '').split(/[^\d]/).map(Number);
@@ -101,19 +111,36 @@ const Home: FC = () => {
 
     setIsLoading(true);
     downloadAndCopy(selectedNumbers).then(() => {
-      setSuccessNotification(NOTIFICATION_COPIED);
-      setIsLoading(false);
       closeModal();
       setSelectedInput('');
     }, () => {
+      setErrorNotification('Ошибка');
       setIsLoading(false);
     });
-  }, [closeModal, outs, selectedInput]);
+  }, [closeModal, downloadAndCopy, outs, selectedInput]);
 
   const handleCloseSnackbar = useCallback(() => {
     setSuccessNotification(undefined);
     setErrorNotification(undefined);
   }, []);
+
+
+  const handleCloseSafariModal = useCallback(() => {
+    setIsLoading(false);
+    setBlobToCopy(undefined);
+    setBlobUrlToCopy(undefined);
+    URL.revokeObjectURL(blobUrlToCopy!);
+  }, [blobUrlToCopy]);
+
+  const handleSafariCopy = useCallback(() => {
+    copyBlobToClipboard(blobToCopy!).then(() => {
+      setSuccessNotification(NOTIFICATION_COPIED);
+      handleCloseSafariModal();
+    }, () => {
+      setErrorNotification('Ошибка');
+      handleCloseSafariModal();
+    });
+  }, [blobToCopy, handleCloseSafariModal]);
 
   const notification = successNotification || errorNotification;
   const prevNotification = usePrevious(notification, true);
@@ -185,7 +212,7 @@ const Home: FC = () => {
         <Snackbar
           open={Boolean(notification)}
           anchorOrigin={SNACKBAR_POSITION}
-          autoHideDuration={6000}
+          autoHideDuration={3000}
           onClose={handleCloseSnackbar}
         >
           <Alert onClose={handleCloseSnackbar} severity={prevNotificationStyle}>
@@ -193,6 +220,18 @@ const Home: FC = () => {
           </Alert>
         </Snackbar>
       </Container>
+      {IS_SAFARI && (
+        <Dialog open={Boolean(blobToCopy)} onClose={handleCloseSafariModal} aria-labelledby="form-dialog-title">
+          <DialogContent>
+            <Button variant="contained" color="primary" onClick={handleSafariCopy}>
+              Скопировать
+            </Button>
+            <Box mt={1}>
+              <img src={blobUrlToCopy} width="100%" alt="" />
+            </Box>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 };
