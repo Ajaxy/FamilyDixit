@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import React, { FC, useCallback, useState } from 'react';
+import React, { FC, useCallback, useEffect, useState } from 'react';
 import {
   Container,
   LinearProgress,
@@ -27,20 +27,38 @@ const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
 const SNACKBAR_POSITION = { vertical: 'top', horizontal: 'center' } as const;
 const NOTIFICATION_COPIED = 'Картинки скопированы в буфер!';
+const LOCAL_STORAGE_KEY = 'savedState';
 
 function getUrlByNumber(number: number) {
   return DECK[number - 1];
 }
 
+function getSavedOuts() {
+  const json = localStorage.getItem(LOCAL_STORAGE_KEY);
+  if (!json) {
+    return undefined;
+  }
+
+  return JSON.parse(json);
+}
+
+function saveOuts(outs: number[]) {
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(outs));
+}
+
 const Home: FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [outs, setOuts] = useState<number[]>([]);
+  const [outs, setOuts] = useState<number[]>(getSavedOuts() || []);
   const [isModalOpen, openModal, closeModal] = useFlag();
   const [selectedInput, setSelectedInput] = useState<string>('');
   const [successNotification, setSuccessNotification] = useState<string>();
   const [errorNotification, setErrorNotification] = useState<string>();
   // Only used for browsers that require user interaction to copy
   const [blobUrlToCopy, setBlobUrlToCopy] = useState<string>();
+
+  useEffect(() => {
+    saveOuts(outs);
+  }, [outs]);
 
   const downloadAndCopy = useCallback(async (numbers: number[]) => {
     const urls = numbers.map(getUrlByNumber);
@@ -119,11 +137,16 @@ const Home: FC = () => {
     });
   }, [closeModal, downloadAndCopy, outs, selectedInput]);
 
+  const handleNewRound = useCallback(() => {
+    if (window.confirm('Точно?')) {
+      setOuts([]);
+    }
+  }, []);
+
   const handleCloseSnackbar = useCallback(() => {
     setSuccessNotification(undefined);
     setErrorNotification(undefined);
   }, []);
-
 
   const handleCloseCopyModal = useCallback(() => {
     setIsLoading(false);
@@ -138,14 +161,14 @@ const Home: FC = () => {
 
   return (
     <>
-      <Box mb={8}>
+      <Box mb={9}>
         <LinearProgress style={{ visibility: isLoading ? 'visible' : 'hidden' }} />
       </Box>
       <Container maxWidth="md">
         <Grid container spacing={2} alignItems="center" justify="space-between" direction="column">
           <Grid item>
             <Typography variant="h5">
-              Скопировать карты в буфер
+              Скопировать картинки:
             </Typography>
           </Grid>
           <Grid item>
@@ -188,12 +211,19 @@ const Home: FC = () => {
           {Boolean(outs.length) && (
             <>
               <Grid item>
-                <Typography variant="h5">
-                  Вышедшие карты
-                </Typography>
+                <Box mt={5}>
+                  <Typography variant="h5">
+                    Вышедшие карты:
+                  </Typography>
+                </Box>
               </Grid>
               <Grid item>
                 {outs.join(', ')}
+              </Grid>
+              <Grid item>
+                <Button onClick={handleNewRound} color="primary">
+                  Начать новый раунд
+                </Button>
               </Grid>
             </>
           )}
