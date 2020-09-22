@@ -23,7 +23,6 @@ import { drawTiles, copyBlobToClipboard } from '../util/util';
 import usePrevious from '../hooks/usePrevious';
 
 const REQUIRES_INTERACTION_TO_COPY = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) || /android/i.test(navigator.userAgent);
-const IS_SAFARI_MOBILE = navigator.userAgent.match(/(iPod|iPhone|iPad)/);
 const INITIAL_SIZE = 6;
 const DECK_NUMBERS = DECK.map((_, i) => i + 1);
 const SNACKBAR_POSITION = { vertical: 'top', horizontal: 'center' } as const;
@@ -41,7 +40,6 @@ const Home: FC = () => {
   const [successNotification, setSuccessNotification] = useState<string>();
   const [errorNotification, setErrorNotification] = useState<string>();
   // Only used for browsers that require user interaction to copy
-  const [blobToCopy, setBlobToCopy] = useState<Blob>();
   const [blobUrlToCopy, setBlobUrlToCopy] = useState<string>();
 
   const downloadAndCopy = useCallback(async (numbers: number[]) => {
@@ -49,7 +47,6 @@ const Home: FC = () => {
     const pngBlob = await drawTiles(urls);
 
     if (REQUIRES_INTERACTION_TO_COPY) {
-      setBlobToCopy(pngBlob);
       setBlobUrlToCopy(URL.createObjectURL(pngBlob));
     } else {
       await copyBlobToClipboard(pngBlob);
@@ -128,22 +125,11 @@ const Home: FC = () => {
   }, []);
 
 
-  const handleCloseSafariModal = useCallback(() => {
+  const handleCloseCopyModal = useCallback(() => {
     setIsLoading(false);
-    setBlobToCopy(undefined);
     setBlobUrlToCopy(undefined);
     URL.revokeObjectURL(blobUrlToCopy!);
   }, [blobUrlToCopy]);
-
-  const handleSafariCopy = useCallback(() => {
-    copyBlobToClipboard(blobToCopy!).then(() => {
-      setSuccessNotification(NOTIFICATION_COPIED);
-      handleCloseSafariModal();
-    }, () => {
-      setErrorNotification('Ошибка');
-      handleCloseSafariModal();
-    });
-  }, [blobToCopy, handleCloseSafariModal]);
 
   const notification = successNotification || errorNotification;
   const prevNotification = usePrevious(notification, true);
@@ -224,30 +210,22 @@ const Home: FC = () => {
         </Snackbar>
       </Container>
       {REQUIRES_INTERACTION_TO_COPY && (
-        <Dialog open={Boolean(blobToCopy)} onClose={handleCloseSafariModal} aria-labelledby="form-dialog-title">
-          {IS_SAFARI_MOBILE ? (
-            <>
-              <DialogTitle>
-                <Grid container alignItems="center" justify="space-between">
-                  <Grid item>
-                    Скопируй!
-                  </Grid>
-                  <Grid item>
-                    <IconButton aria-label="close" onClick={handleCloseSafariModal}>
-                      <CloseIcon />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              </DialogTitle>
-              <DialogContent>
-                <img src={blobUrlToCopy} width="100%" alt="" />
-              </DialogContent>
-            </>
-          ) : (
-            <Button variant="contained" color="primary" onClick={handleSafariCopy}>
-              Скопировать
-            </Button>
-          )}
+        <Dialog open={Boolean(blobUrlToCopy)} onClose={handleCloseCopyModal} aria-labelledby="form-dialog-title">
+          <DialogTitle>
+            <Grid container alignItems="center" justify="space-between">
+              <Grid item>
+                Скопируй!
+              </Grid>
+              <Grid item>
+                <IconButton aria-label="close" onClick={handleCloseCopyModal}>
+                  <CloseIcon />
+                </IconButton>
+              </Grid>
+            </Grid>
+          </DialogTitle>
+          <DialogContent>
+            <img src={blobUrlToCopy} width="100%" alt="" />
+          </DialogContent>
         </Dialog>
       )}
     </>
