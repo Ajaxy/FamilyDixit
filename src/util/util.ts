@@ -27,6 +27,8 @@ function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
 }
 
 export async function drawTiles(imageUrls: string[]): Promise<Blob> {
+  const images = await Promise.all(imageUrls.map(loadImage));
+
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d')!;
 
@@ -39,7 +41,11 @@ export async function drawTiles(imageUrls: string[]): Promise<Blob> {
   let i = 0;
   for (let j = 0; j < rowsCount; j++) {
     for (let k = 0; k < columnsCount; k++, i++) {
-      const img = await loadImage(imageUrls[i]);
+      if (i >= images.length) {
+        break;
+      }
+
+      const img = images[i];
       ctx.drawImage(
         img,
         k * (IMG_WIDTH + IMG_MARGIN),
@@ -54,13 +60,9 @@ export async function drawTiles(imageUrls: string[]): Promise<Blob> {
 }
 
 export async function copyBlobToClipboard(pngBlob: Blob) {
-  try {
-    await navigator.clipboard.write([
-      new window.ClipboardItem({
-        [pngBlob.type]: pngBlob,
-      }),
-    ]);
-  } catch (error) {
-    console.error(error);
-  }
+  await navigator.clipboard.write([
+    new window.ClipboardItem({
+      [pngBlob.type]: pngBlob,
+    }),
+  ]);
 }

@@ -98,7 +98,8 @@ const Home: FC = () => {
     setIsLoading(true);
     downloadAndCopy(numbersToTake).then(() => {
       setOuts([...outs, ...numbersToTake]);
-    }, () => {
+    }, (err) => {
+      console.error(err);
       setErrorNotification('Ошибка');
       setIsLoading(false);
     });
@@ -116,7 +117,8 @@ const Home: FC = () => {
     setIsLoading(true);
     downloadAndCopy([numberToTake]).then(() => {
       setOuts([...outs, numberToTake]);
-    }, () => {
+    }, (err) => {
+      console.error(err);
       setErrorNotification('Ошибка');
       setIsLoading(false);
     });
@@ -139,7 +141,8 @@ const Home: FC = () => {
     downloadAndCopy(selectedNumbers).then(() => {
       closeModal();
       setSelectedInput('');
-    }, () => {
+    }, (err) => {
+      console.error(err);
       setErrorNotification('Ошибка');
       setIsLoading(false);
     });
@@ -167,7 +170,8 @@ const Home: FC = () => {
     copyBlobToClipboard(blobToCopy!).then(() => {
       setSuccessNotification(NOTIFICATION_COPIED);
       handleCloseCopyModal();
-    }, () => {
+    }, (err) => {
+      console.error(err);
       setErrorNotification('Ошибка');
       handleCloseCopyModal();
     });
