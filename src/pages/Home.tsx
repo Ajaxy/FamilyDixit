@@ -197,7 +197,7 @@ const Home: FC = () => {
           </Grid>
           <Grid item>
             <Button variant="contained" color="primary" onClick={handleInitialClick} disabled={isLoading}>
-              6 из колоды (начало игры)
+              6 из колоды (первый кон)
             </Button>
           </Grid>
           <Grid item>
@@ -226,7 +226,7 @@ const Home: FC = () => {
                 <Button onClick={closeModal} color="primary" disabled={isLoading}>
                   Отмена
                 </Button>
-                <Button onClick={handleSelectedInput} color="primary">
+                <Button onClick={handleSelectedInput} color="primary" disabled={isLoading}>
                   Скопировать
                 </Button>
               </DialogActions>
